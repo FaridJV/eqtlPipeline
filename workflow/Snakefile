@@ -1,0 +1,51 @@
+configfile: "../config/config.yaml"
+
+wildcard_constraints:
+    tissue = "[A-Za-z0-9_\-]+",
+    chrom = "[0-9]+"
+
+KINDS=["cis","trans"] if config["trans"] else ["cis"]
+rule all:
+    input: expand("../results/{kind}QT-{chrom}-{tissue}.txt",
+           chrom=config["chromosome"],
+           tissue=config["tissue"],
+           kind=KINDS)
+
+rule add_age_cov:
+    input: "../input/{tissue}_covariates.txt"
+    output: "../results/{tissue}_covariates2.txt"
+    shell: "Rscript scripts/cov_prepro.R --tissue {wildcards.tissue} --inpath {input} --outpath {output}" 
+    
+rule decompress:
+    input: "../input/chr{chrom}_vcf2.vcf.recode.vcf.bcf"
+    output: "../work/chr{chrom}.vcf"
+    shell: "bcftools view -Ov -o {output} {input}"
+
+rule map_eqtls:
+    input: 
+        vcf="../input/chr{chrom}_vcf2.vcf.recode.vcf.bcf",
+        exp="../input/gene_tpm_2017-06-05_v8_{tissue}.gct.gz",
+        bed="../input/Genes_bed.csv",
+        covar="../results/{tissue}_covariates2.txt"
+
+    output:
+        directory("../work/eqtl_temp_chr{chrom}-{tissue}/")
+    params: 
+        trans_flag="--trans " if config["trans"] else ""    
+
+    shell: "Rscript scripts/QTL_map.R --exp-path {input.exp} --vcf-path {input.vcf} --genes-bed {input.bed} --covars {input.covar} {params.trans_flag} --out {output}" 
+
+rule filter_medians:
+    input:"../work/eqtl_temp_chr{chrom}-{tissue}/" 
+    output:expand("../work/Filtered-{kind}QT-{{chrom}}-{{tissue}}.txt",kind=KINDS)
+    params: 
+        trans_flag="--trans " if config["trans"] else ""
+    shell: "python filter_by_medians.py --inpath {input} {params.trans_flag} --outpath {output}"
+
+
+rule extractQTs:
+    input: "../work/Filtered-{kind}QT-{chrom}-{tissue}.txt"
+    
+    output: "../results/{kind}QT{chrom}-{tissue}.txt"
+
+    shell: "cp {input} {output}"
