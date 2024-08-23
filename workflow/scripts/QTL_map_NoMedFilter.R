@@ -1,6 +1,6 @@
 #### Import libraries ####
-
-library(tidyverse)
+#options(error=traceback)
+library(dplyr)
 library(stringr)
 library(MatrixEQTL)
 library(data.table)
@@ -14,7 +14,7 @@ parser <- ArgumentParser()
 
 parser$add_argument('--exp_path')
 parser$add_argument('--vcf_path')
-parser$add_argument('--pathtemp')
+parser$add_argument('--out')
 parser$add_argument('--genes_bed')
 parser$add_argument('--covars')
 trans<- parser$add_mutually_exclusive_group()
@@ -66,7 +66,7 @@ exp_tis_3<-cbind(Gene,exp_tis_3)
 ##### Import genotype file #######
 
 
-chr_vcf<-read.delim(args$vcf_path,header = TRUE,comment.char = "",skip = 82) 
+chr_vcf<-read.delim(args$vcf_path,header = TRUE,comment.char = "") 
 
 snpMatrix<-select(chr_vcf,!c(X.CHROM,POS,REF,ALT,QUAL,FILTER,INFO,FORMAT))
 snploc<-select(chr_vcf,c(ID,X.CHROM,POS))
@@ -108,7 +108,9 @@ exp_tis_3<-exp_tis_3%>% select(all_of(final2))
 
 ###################################################
 
-write.table(exp_tis_3,paste0(pathtemp,"/exp.txt"),row.names = FALSE,quote = FALSE)
+dir.create(args$out,mode="0777")
+
+write.table(exp_tis_3,paste0(args$out,"/exp.txt"),row.names = FALSE,quote = FALSE)
 
 Genes_bed <- read.csv(args$genes_bed)
 tis_bed<-select(tis_expression,c(Name,Description))
@@ -172,7 +174,7 @@ snpMatrix2<-cbind(rownames(snpMatrix2),data.frame(snpMatrix2,row.names=NULL))
 
 
 
-write.table(snpMatrix2,paste0(pathtemp,"/snpMatrix.txt"),row.names = FALSE,quote = FALSE)          #specify cromosome
+write.table(snpMatrix2,paste0(args$out,"/snpMatrix.txt"),row.names = FALSE,quote = FALSE)          #specify cromosome
 
 
 ########### Import snpMatT #########################
@@ -187,7 +189,7 @@ tMatrix_chr<-merge(snpMatT,exp_tis_T,by="row.names")
 
 
 
-write.table(tMatrix_chr,paste0(pathtemp,"/tMatrix.txt"),quote = FALSE,row.names = FALSE,sep = ",")
+write.table(tMatrix_chr,paste0(args$out,"/tMatrix.txt"),quote = FALSE,row.names = FALSE,sep = ",")
 
 
 
@@ -196,9 +198,9 @@ write.table(tMatrix_chr,paste0(pathtemp,"/tMatrix.txt"),quote = FALSE,row.names 
 ####### Start MATRIXEQTL pipeline ##############
 ################################################
 
-SNP_file_name = paste0(pathtemp,"/snpMatrix.txt")
+SNP_file_name = paste0(args$out,"/snpMatrix.txt")
 #paste(paste0("D:/GTEX4/snpMatrix/snpMatrix_chr",chr,"_",tis, ".txt"),sep=" ")
-expression_file_name = paste0(pathtemp,"/exp.txt")
+expression_file_name = paste0(args$out,"/exp.txt")
 #paste(paste0("D:/GTEX4/Expression2/exp_",tis, "_3.txt"),sep = " ")
 
 
@@ -258,7 +260,7 @@ output_file_name_tra = tempfile()
   
   
   ##### Set p-value threshold, depending on the dataset
-pvOutputThreshold_cis = 1e-3
+pvOutputThreshold_cis = 0.1
 
 
 if (args$trans){
@@ -357,13 +359,13 @@ if (args$trans){
   
 
 cisQT_chr$beta_se<- cisQT_chr$beta/cisQT_chr$statistic
-write.table(cisQT_chr,paste0(pathtemp,"/cisQT.txt"),quote = FALSE,row.names = FALSE)
+write.table(cisQT_chr,paste0(args$out,"/cisQT.txt"),quote = FALSE,row.names = FALSE)
 
 
 if (args$trans){
   
   transQT_chr$beta_se<- transQT_chr$beta/transQT_chr$statistic
-  write.table(transQT_chr,paste0(pathtemp,"/transQT.txt"),quote = FALSE,row.names = FALSE)
+  write.table(transQT_chr,paste0(args$out,"/transQT.txt"),quote = FALSE,row.names = FALSE)
 
 }
 

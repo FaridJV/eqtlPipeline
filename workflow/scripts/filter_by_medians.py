@@ -16,7 +16,8 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--inpath')
 parser.add_argument('--outpath')
-parser.add_argument('--trans',action=argparse.BooleanOptionalAction)
+#parser.add_argument('--trans',action=argparse.BooleanOptionalAction)
+parser.add_argument('--transoutpath')
 
 args  = parser.parse_args() 
 
@@ -55,15 +56,19 @@ for i in range(len(snps_cis)):
     pasz_cis.append(i)
     
 
-cisQT_chr = cisQT_chr.drop(pasz_cis)
-
+#cisQT_chr = cisQT_chr.drop(pasz_cis)
+cisQT2_chr = cisQT_chr.drop(pasz_cis)
+cisQT2_chr["linear"]=["yes"]*len(cisQT2_chr)
+cisQT3_chr = cisQT_chr[cisQT_chr.index.isin(pasz_cis)]
+cisQT3_chr["linear"]=["no"]*len(cisQT3_chr)
+cisQT_chr = pd.concat([cisQT2_chr,cisQT3_chr],ignore_index = True)
 ### output ########
-cisQT_chr.to_csv(args.outpath + "cisQT.txt")
+cisQT_chr.to_csv(args.outpath)
 
 
 ### Check for trans  ##########
 
-if (args.trans):
+if (args.transoutpath):
     
   ### For Trans- #########
 
@@ -87,8 +92,14 @@ if (args.trans):
     if (q1[1]!=1):
       pasz_trans.append(i)
 
-  transQT_chr = transQT_chr.drop(pasz_trans)
-  transQT_chr.to_csv(args.outpath + "transQT.txt")
+  #transQT_chr = transQT_chr.drop(pasz_trans)
+  transQT2_chr = transQT_chr.drop(pasz_trans)
+  transQT2_chr["linear"]=["yes"]*len(transQT2_chr)
+  transQT3_chr = transQT_chr[transQT_chr.index.isin(pasz_trans)]
+  transQT3_chr["linear"]=["no"]*len(transQT3_chr)
+  transQT_chr = pd.concat([transQT2_chr,transQT3_chr],ignore_index = True)
+  transQT_chr.to_csv(args.transoutpath)
+  
 
 
 
