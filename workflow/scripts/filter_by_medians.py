@@ -21,21 +21,13 @@ parser.add_argument('--transoutpath')
 
 args  = parser.parse_args() 
 
-#chro      = "21"
-##tis       = "kidney_cortex"
-#npath    = "C:/Users/farid/Documents/R/QTL_scripts/example/"
-#outpath   = ""
-#trans     = ""
-
 #### Import files ########
 
-#tMatrix   = pd.read_csv(inpath+'tMatrix_chr'+chro + '_' + tis + '.txt',sep=',',header=0,low_memory=False)
-tMatrix   = pd.read_csv(args.inpath+'tMatrix_chr.txt',sep=',',header=0,low_memory=False)
+tMatrix   = pd.read_csv(args.inpath+'/tMatrix.txt',sep=',',header=0,low_memory=False)
 
 ### For cis #####
 
-#cisQT_chr = pd.read_csv(inpath+'cisQT'+chro +'_'+ tis +'.txt',sep=" ")
-cisQT_chr = pd.read_csv(args.inpath+'cisQT.txt',sep=" ")
+cisQT_chr = pd.read_csv(args.inpath+'/cisQT.txt',sep=" ")
 pasz_cis  = []
 
 genes_cis = cisQT_chr['gene']
@@ -63,7 +55,7 @@ cisQT3_chr = cisQT_chr[cisQT_chr.index.isin(pasz_cis)]
 cisQT3_chr["linear"]=["no"]*len(cisQT3_chr)
 cisQT_chr = pd.concat([cisQT2_chr,cisQT3_chr],ignore_index = True)
 ### output ########
-cisQT_chr.to_csv(args.outpath)
+cisQT_chr.to_csv(args.outpath,index=False)
 
 
 ### Check for trans  ##########
@@ -72,8 +64,7 @@ if (args.transoutpath):
     
   ### For Trans- #########
 
-  #transQT_chr = pd.read_csv(inpath+'transQT'+chro +'_'+ tis +'.txt',sep=" ")
-  transQT_chr = pd.read_csv(args.inpath+'transQT.txt',sep=" ")
+  transQT_chr = pd.read_csv(args.inpath+'/transQT.txt',sep=" ")
   pasz_trans  = []
 
   genes_trans = transQT_chr['gene']
@@ -98,7 +89,7 @@ if (args.transoutpath):
   transQT3_chr = transQT_chr[transQT_chr.index.isin(pasz_trans)]
   transQT3_chr["linear"]=["no"]*len(transQT3_chr)
   transQT_chr = pd.concat([transQT2_chr,transQT3_chr],ignore_index = True)
-  transQT_chr.to_csv(args.transoutpath)
+  transQT_chr.to_csv(args.transoutpath,index=False)
   
 
 
