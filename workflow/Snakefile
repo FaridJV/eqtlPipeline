@@ -7,7 +7,7 @@ wildcard_constraints:
 KINDS=["cis","trans"] if config["trans"] else ["cis"]
 
 rule all:
-    input: expand("../results/{kind}QT-{chrom}-{tissue}.txt",chrom=config["chromosome"],tissue=config["tissue"],kind=KINDS)
+    input: expand("../results/{kind}QT-{chrom}-{tissue}.txt",chrom=config["chromosome"],tissue=config["tissue"],kind=KINDS), expand("../results/{tissue}_covariates2.txt",tissue=config["tissue"])
 
 rule add_age_cov:
     input: inpath="../input/{tissue}_covariates.txt",age="../input/age_data.txt"
@@ -18,29 +18,30 @@ rule add_age_cov:
     
 rule decompress:
     input: "../input/chr{chrom}_vcf2.vcf.recode.vcf.bcf"
-    output: "../work/chr{chrom}.vcf"
+    output: temp("../work/chr{chrom}.vcf")
     log: "../logs/decompress/{chrom}.log"
     benchmark: "../benchmarks/decompress/{chrom}.tsv"
 
-    shell: "bcftools view -t chr{wildcards.chrom}:5030912-5040000 {input} | perl -lane 'print unless /^##/' > {output} 2>{log}"
-    #shell: "bcftools view {input} | perl -lane 'print unless /^##/' > {output} 2>{log}"
+    #shell: "bcftools view -t chr{wildcards.chrom}:5030912-5040000 {input} | perl -lane 'print unless /^##/' > {output} 2>{log}"
+    shell: "bcftools view {input} | perl -lane 'print unless /^##/' > {output} 2>{log}"
 rule map_eqtls1:
     input: 
         vcf="../work/chr{chrom}.vcf",
         exp="../input/gene_tpm_2017-06-05_v8_{tissue}.gct.gz"
     output:
-        snpMat= "../work/snpMatrix{chrom}-{tissue}.txt",
-        expMat= "../work/expMat{chrom}-{tissue}.txt",
-        snploc= "../work/snploc{chrom}-{tissue}.txt"
+        snpMat= temp("../work/snpMatrix{chrom}-{tissue}.txt"),
+        expMat= temp("../work/expMat{chrom}-{tissue}.txt"),
+        snploc= temp("../work/snploc{chrom}-{tissue}.txt")
     log: "../logs/map_eqtls1/{chrom}-{tissue}.log" 
     benchmark: "../benchmarks/map_eqtls1/{chrom}-{tissue}.tsv"
+    resources: mem_mb=58500
     shell: "Rscript scripts/QTL_map_1.r --exp_path {input.exp} --vcf_path {input.vcf} --outsnploc {output.snploc} --outsnpMat {output.snpMat} --outexpMat {output.expMat} > {log} 2>&1" 
 
 rule filterSamp:
     input: "../work/snpMatrix{chrom}-{tissue}.txt"
     output:
-        snpMat2= "../work/snpMatrixtwo{chrom}-{tissue}.txt",
-        snpMatT= "../work/snpMatT{chrom}-{tissue}.txt"
+        snpMat2= temp("../work/snpMatrixtwo{chrom}-{tissue}.txt"),
+        snpMatT= temp("../work/snpMatT{chrom}-{tissue}.txt")
     log: "../logs/filterSamp/{chrom}-{tissue}.log" 
     benchmark: "../benchmarks/filterSamp/{chrom}-{tissue}.tsv"
     shell: "python scripts/filter_samples.py --inpath {input} --outsnpmaT2 {output.snpMatT} --outsnpmat {output.snpMat2} > {log} 2>&1"
@@ -55,18 +56,19 @@ rule map_eqtls2:
         covar="../results/{tissue}_covariates2.txt",
         snploc= "../work/snploc{chrom}-{tissue}.txt"
     output:
-        directory("../work/eqtl_temp_chr{chrom}-{tissue}/")
+        temp(directory("../work/eqtl_temp_chr{chrom}-{tissue}/"))
     params: 
         trans_flag="--trans " if config["trans"] else "" 
     log: "../logs/map_eqtls2/{chrom}-{tissue}.log" 
-    benchmark: "../benchmarks/map_eqtls2/{chrom}-{tissue}.tsv"     
+    benchmark: "../benchmarks/map_eqtls2/{chrom}-{tissue}.tsv"
+    resources: mem_mb=10500
     shell:"Rscript scripts/QTL_map_2.r --exp_path {input.exp} --snploc {input.snploc} --expMat {input.expMat} --snpMatT {input.snpMatT} --snpMat2 {input.snpMat2} --genes_bed {input.bed} --covars {input.covar} {params.trans_flag} --out {output} > {log} 2>&1" 
 
 if (config["trans"]):
 
     rule filter_both_medians:
         input:"../work/eqtl_temp_chr{chrom}-{tissue}/" 
-        output:cis="../work/Filtered-cisQT-{chrom}-{tissue}.txt",trans="../work/Filtered-transQT-{chrom}-{tissue}.txt"
+        output:cis=temp("../work/Filtered-cisQT-{chrom}-{tissue}.txt"),trans=temp("../work/Filtered-transQT-{chrom}-{tissue}.txt")
         log: "../logs/filter_both_medians/{chrom}-{tissue}.log"
         benchmark: "../benchmarks/filter_both_medians/{chrom}-{tissue}.tsv"
         shell: "python scripts/filter_by_medians.py --inpath {input} --transoutpath {output.trans} --outpath {output.cis} > {log} 2>&1"
@@ -74,9 +76,10 @@ if (config["trans"]):
 else:
     rule filter_cis_medians:
         input:"../work/eqtl_temp_chr{chrom}-{tissue}/" 
-        output:"../work/Filtered-cisQT-{chrom}-{tissue}.txt"
+        output:temp("../work/Filtered-cisQT-{chrom}-{tissue}.txt")
         log: "../logs/filter_cis_medians/{chrom}-{tissue}.log"
         benchmark: "../benchmarks/filter_cis_medians/{chrom}-{tissue}.tsv"
+        resources: mem_mb=6700
         shell: "python scripts/filter_by_medians.py --inpath {input} --outpath {output} > {log} 2>&1"
 
 
@@ -88,3 +91,4 @@ rule extractQTs:
     log: "../logs/extractQTs/{kind}-{chrom}-{tissue}.log"
     benchmark: "../benchmarks/extractQTs/{kind}-{chrom}-{tissue}.tsv"
     shell: "cp {input} {output} > {log} 2>&1"
+

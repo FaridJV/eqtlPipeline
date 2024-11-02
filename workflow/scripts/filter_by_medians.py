@@ -30,15 +30,11 @@ tMatrix   = pd.read_csv(args.inpath+'/tMatrix.txt',sep=',',header=0,low_memory=F
 cisQT_chr = pd.read_csv(args.inpath+'/cisQT.txt',sep=" ")
 pasz_cis  = []
 
-genes_cis = cisQT_chr['gene']
+genes_cis = cisQT_chr['gene'].str.replace('-','.',regex=False)
 snps_cis  = cisQT_chr['snps']
 
 
-for i in range(len(genes_cis)):
-    
-  if '-' in genes_cis[i]:
-              genes_cis[i]=genes_cis[i].replace('-','.')
-        
+
 for i in range(len(snps_cis)):
     
   q=tMatrix.groupby([snps_cis[i]])[genes_cis[i]].median()
@@ -95,6 +91,7 @@ if (args.transoutpath):
 
 
   
+
 
 
 

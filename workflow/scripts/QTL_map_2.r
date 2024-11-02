@@ -116,7 +116,7 @@ pvOutputThreshold_cis = 0.1
 
 
 if (args$trans){
-  pvOutputThreshold_tra = 1e-6
+  pvOutputThreshold_tra = 1e-3
 } else {
   pvOutputThreshold_tra = 0 
 }
@@ -161,7 +161,7 @@ unlink(output_file_name_cis)
 cisQT_chr <- data.frame(me$cis$eqtls)
 
 if (args$trans){
-  transsQT_chr <- data.frame(me$trans$eqtls)
+  transQT_chr <- data.frame(me$trans$eqtls)
 } 
   
   ################ add for cis ########################
@@ -219,4 +219,5 @@ if (args$trans){
   write.table(transQT_chr,paste0(args$out,"/transQT.txt"),quote = FALSE,row.names = FALSE)
 
 }
+
 
