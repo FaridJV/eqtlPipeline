@@ -28,10 +28,19 @@ tMatrix   = pd.read_csv(args.inpath+'/tMatrix.txt',sep=',',header=0,low_memory=F
 ### For cis #####
 
 cisQT_chr = pd.read_csv(args.inpath+'/cisQT.txt',sep=" ")
+cisQT_chr2 = cisQT_chr[cisQT_chr["gene"]!="7SK"]
+cisQT_chr2 = cisQT_chr2[cisQT_chr2["gene"]!="5S_rRNA"]
+cisQT_chr2 = cisQT_chr2.reset_index(drop=True)
+
+cisQT_chr0 = cisQT_chr[cisQT_chr["gene"]=="7SK"]
+cisQT_chr01 = cisQT_chr[cisQT_chr["gene"]=="5S_rRNA"]
+cisQT_chr0 = pd.concat([cisQT_chr0,cisQT_chr01],ignore_index = True)
+cisQT_chr0["linear"]=["NA"]*len(cisQT_chr0)
+
 pasz_cis  = []
 
-genes_cis = cisQT_chr['gene'].str.replace('-','.',regex=False)
-snps_cis  = cisQT_chr['snps']
+genes_cis = cisQT_chr2['gene'].str.replace('-','.',regex=False)
+snps_cis  = cisQT_chr2['snps']
 
 
 
@@ -45,11 +54,11 @@ for i in range(len(snps_cis)):
     
 
 #cisQT_chr = cisQT_chr.drop(pasz_cis)
-cisQT2_chr = cisQT_chr.drop(pasz_cis)
+cisQT2_chr = cisQT_chr2.drop(pasz_cis)
 cisQT2_chr["linear"]=["yes"]*len(cisQT2_chr)
-cisQT3_chr = cisQT_chr[cisQT_chr.index.isin(pasz_cis)]
+cisQT3_chr = cisQT_chr2[cisQT_chr2.index.isin(pasz_cis)]
 cisQT3_chr["linear"]=["no"]*len(cisQT3_chr)
-cisQT_chr = pd.concat([cisQT2_chr,cisQT3_chr],ignore_index = True)
+cisQT_chr = pd.concat([cisQT2_chr,cisQT_chr0,cisQT3_chr],ignore_index = True)
 ### output ########
 cisQT_chr.to_csv(args.outpath,index=False)
 

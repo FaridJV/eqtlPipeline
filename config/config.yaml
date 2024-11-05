@@ -40,8 +40,8 @@ tissue:
 - prostate
 - skin_not_sun_exposed_suprapubic
 - skin_sun_exposed_lower_leg
-- small_intestine_terminal_ileum
-- spleen
+#- small_intestine_terminal_ileum
+#- spleen
 - stomach
 - testis
 - thyroid

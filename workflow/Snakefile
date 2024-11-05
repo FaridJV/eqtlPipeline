@@ -2,7 +2,7 @@ configfile: "../config/config.yaml"
 
 wildcard_constraints:
     tissue = "[A-Za-z0-9_\-]+",
-    chrom = "[0-9]+"
+    chrom = "[0-9X]+"
 
 KINDS=["cis","trans"] if config["trans"] else ["cis"]
 
